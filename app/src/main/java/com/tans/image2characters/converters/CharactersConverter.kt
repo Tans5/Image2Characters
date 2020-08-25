@@ -6,7 +6,10 @@ interface CharactersConverter<DrawData> {
 
     val paint: Paint
 
-    fun calculateOutputSize(originBitmap: Bitmap, drawData: DrawData): Pair<Int, Int>
+    fun calculateOutputSize(originBitmap: Bitmap, drawData: DrawData): Pair<Int, Int> {
+        val charHeight = paint.getCharSizeWithoutSpace()
+        return (originBitmap.width * charHeight) to (originBitmap.height * charHeight)
+    }
 
     fun calculateDrawData(originBitmap: Bitmap): DrawData
 
