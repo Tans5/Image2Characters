@@ -3,14 +3,12 @@ package com.tans.image2characters
 import android.Manifest
 import android.graphics.Bitmap
 import android.graphics.drawable.BitmapDrawable
+import android.net.Uri
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
 import com.tans.image2characters.converters.ColorCharactersConverter
-import com.tans.rxutils.SaveMediaType
-import com.tans.rxutils.chooseImageFromGallery
-import com.tans.rxutils.loadingDialog
-import com.tans.rxutils.saveDataToMediaStore
+import com.tans.rxutils.*
 import com.tbruyelle.rxpermissions2.RxPermissions
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.schedulers.Schedulers
@@ -30,19 +28,24 @@ class MainActivity : AppCompatActivity(), CoroutineScope by CoroutineScope(Dispa
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        image_view.maximumScale = Float.MAX_VALUE
+
         tool_bar.menu.findItem(R.id.add_image)
             .setOnMenuItemClickListener  {
                 launch {
                     val bitmap = chooseImageFromGallery(this@MainActivity)
+                        .flatMap { cropImage(this@MainActivity, it) }
                         .observeOn(Schedulers.io())
-                        .map {
-                            val orientation = this@MainActivity.getImageOrientation(it)
+                        .map { file ->
+                            val uri = Uri.fromFile(file)
+                            val orientation = this@MainActivity.getImageOrientation(uri)
                             val sampleCharactersConverter = ColorCharactersConverter()
                             val image = getBitmapWithMaxSize(
                                 maxWidth = maxBitmapSize,
                                 maxHeight = maxBitmapSize,
-                                uri = it
+                                uri = uri
                             ).rotation(orientation)
+                            if (file.exists()) file.delete()
                             sampleCharactersConverter.convert(image)
                         }
                         .observeOn(AndroidSchedulers.mainThread())
